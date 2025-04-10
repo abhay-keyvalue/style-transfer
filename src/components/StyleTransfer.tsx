@@ -112,7 +112,7 @@ const StyleTransfer: React.FC = () => {
       }
 
       const imageTensor = preprocess(contentImg, 1);
-      const filterImageTensor = preprocess(filterImg, 1);
+      const filterImageTensor = preprocess(filterImg, 0.9);
 
       console.log('Input tensor shapes:', {
         image: imageTensor.shape,
@@ -120,8 +120,7 @@ const StyleTransfer: React.FC = () => {
       });
 
       // Apply style transfer with reduced weight
-      const styleWeight = 0.5; // Adjust this value between 0 and 1 to control style influence
-      const result = model.execute([imageTensor, filterImageTensor.mul(tf.scalar(styleWeight))]) as tf.Tensor;
+      const result = model.execute([imageTensor, filterImageTensor]) as tf.Tensor;
       
       console.log('Model output shape:', result.shape);
       const squeezed = tf.squeeze(result);
@@ -147,8 +146,8 @@ const StyleTransfer: React.FC = () => {
   const preprocess = (imageData: HTMLImageElement, intensity: number = 1) => {
 
     const imageTensor = tf.browser.fromPixels(imageData);
-    const offset = tf.scalar(255.0);
-    const normalized = tf.scalar(1.0).sub(imageTensor.div(offset));
+
+    const normalized = imageTensor.div(tf.scalar(255.0));
     
     const scaled = normalized.mul(tf.scalar(intensity));
     
