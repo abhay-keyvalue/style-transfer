@@ -1,13 +1,26 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as tf from '@tensorflow/tfjs';
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  CircularProgress,
+  Alert,
+  IconButton,
+} from '@mui/material';
+import { PhotoCamera, Delete } from '@mui/icons-material';
 import './StyleTransfer.css';
 
 const StyleTransfer: React.FC = () => {
   const [contentImage, setContentImage] = useState<string>('');
   const [styleImage, setStyleImage] = useState<string>('');
+  const [resultImage, setResultImage] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
   const contentImageRef = useRef<HTMLImageElement>(null);
   const styleImageRef = useRef<HTMLImageElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, setImage: (url: string) => void) => {
     const file = event.target.files?.[0];
@@ -15,9 +28,15 @@ const StyleTransfer: React.FC = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         setImage(e.target?.result as string);
+        setError('');
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveImage = (setImage: (url: string) => void) => {
+    setImage('');
+    setResultImage('');
   };
 
   useEffect(() => {
@@ -26,6 +45,7 @@ const StyleTransfer: React.FC = () => {
 
       try {
         setIsProcessing(true);
+        setError('');
         console.log('doStyleTransfer called');
         const model = await tf.loadGraphModel('/tfjs_model/model.json');
         console.log('Model loaded successfully');
@@ -48,10 +68,14 @@ const StyleTransfer: React.FC = () => {
           throw new Error(`Unexpected tensor shape after squeezing: ${JSON.stringify(squeezed.shape)}`);
         }
         
-        const canvas = document.getElementById('stylizedImage') as HTMLCanvasElement;
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error('Canvas not found');
+        
         await tf.browser.toPixels(squeezed as tf.Tensor3D, canvas);
+        setResultImage(canvas.toDataURL());
       } catch (error) {
         console.error('Error in style transfer:', error);
+        setError(error instanceof Error ? error.message : 'An error occurred during style transfer');
       } finally {
         setIsProcessing(false);
       }
@@ -71,74 +95,152 @@ const StyleTransfer: React.FC = () => {
   }, [contentImage, styleImage]);
 
   return (
-    <div className="style-transfer-container">
-      <h1 className="title">Neural Style Transfer</h1>
-      <p className="subtitle">Transform your images with artistic styles</p>
+    <Box className="container">
+      <Typography variant="h4" className="title">
+        Neural Style Transfer
+      </Typography>
       
-      <div className="upload-section">
-        <div className="upload-box">
-          <h2>Content Image</h2>
-          <label className="file-input-label">
-            Choose Content Image
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleImageUpload(e, setContentImage)}
-              className="file-input"
-            />
-          </label>
-          {contentImage ? (
-            <img
-              ref={contentImageRef}
-              src={contentImage}
-              alt="Content"
-              className="preview-image"
-            />
-          ) : (
-            <div className="upload-placeholder">
-              <p>No image selected</p>
-            </div>
-          )}
-        </div>
-
-        <div className="upload-box">
-          <h2>Style Image</h2>
-          <label className="file-input-label">
-            Choose Style Image
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleImageUpload(e, setStyleImage)}
-              className="file-input"
-            />
-          </label>
-          {styleImage ? (
-            <img
-              ref={styleImageRef}
-              src={styleImage}
-              alt="Style"
-              className="preview-image"
-            />
-          ) : (
-            <div className="upload-placeholder">
-              <p>No image selected</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {isProcessing && (
-        <div className="processing">
-          <div className="spinner"></div>
-          <p>Processing your images...</p>
-        </div>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
       )}
 
-      <div className="result-section">
-        <h2>Result</h2>
-        <canvas id="stylizedImage" className="result-canvas"></canvas>
-      </div>
-    </div>
+      <Box className="upload-section">
+        {/* Content Image */}
+        <Box className="upload-box">
+          <Paper className="paper">
+            <Typography variant="h6" gutterBottom>
+              Content Image
+            </Typography>
+            <Box className="image-container">
+              {contentImage ? (
+                <>
+                  <img
+                    ref={contentImageRef}
+                    src={contentImage}
+                    alt="Content"
+                    className="preview-image"
+                  />
+                  <IconButton
+                    onClick={() => handleRemoveImage(setContentImage)}
+                    className="delete-button"
+                  >
+                    <Delete />
+                  </IconButton>
+                </>
+              ) : (
+                <Box className="placeholder-box">
+                  <Typography className="placeholder-text">
+                    No image selected
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<PhotoCamera />}
+              fullWidth
+            >
+              Upload Content Image
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, setContentImage)}
+              />
+            </Button>
+          </Paper>
+        </Box>
+
+        {/* Style Image */}
+        <Box className="upload-box">
+          <Paper className="paper">
+            <Typography variant="h6" gutterBottom>
+              Style Image
+            </Typography>
+            <Box className="image-container">
+              {styleImage ? (
+                <>
+                  <img
+                    ref={styleImageRef}
+                    src={styleImage}
+                    alt="Style"
+                    className="preview-image"
+                  />
+                  <IconButton
+                    onClick={() => handleRemoveImage(setStyleImage)}
+                    className="delete-button"
+                  >
+                    <Delete />
+                  </IconButton>
+                </>
+              ) : (
+                <Box className="placeholder-box">
+                  <Typography className="placeholder-text">
+                    No image selected
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<PhotoCamera />}
+              fullWidth
+            >
+              Upload Style Image
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, setStyleImage)}
+              />
+            </Button>
+          </Paper>
+        </Box>
+
+        {/* Result */}
+        <Box className="upload-box">
+          <Paper className="paper">
+            <Typography variant="h6" gutterBottom>
+              Stylized Result
+            </Typography>
+            <Box className="image-container">
+              {isProcessing ? (
+                <Box className="processing-box">
+                  <CircularProgress className="spinner" />
+                  <Typography className="processing-text">
+                    Processing...
+                  </Typography>
+                </Box>
+              ) : resultImage ? (
+                <img
+                  src={resultImage}
+                  alt="Result"
+                  className="preview-image"
+                />
+              ) : (
+                <Box className="placeholder-box">
+                  <Typography className="placeholder-text">
+                    Result will appear here
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Paper>
+        </Box>
+      </Box>
+
+      {/* Hidden canvas for processing */}
+      <canvas
+        ref={canvasRef}
+        width={500}
+        height={500}
+        className="hidden-canvas"
+      />
+    </Box>
   );
 };
 
