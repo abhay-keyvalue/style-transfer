@@ -91,7 +91,7 @@ const StyleTransfer: React.FC = () => {
       setError('');
       console.log('doStyleTransfer called');
 
-      const model = await tf.loadGraphModel(`${process.env.PUBLIC_URL || ''}/tfjs_model/model.json`);
+      const model = await tf.loadGraphModel(`${process.env.PUBLIC_URL || ''}/public/tfjs_model/model.json`);
       console.log('Model loaded successfully');
 
       // Ensure images are loaded
