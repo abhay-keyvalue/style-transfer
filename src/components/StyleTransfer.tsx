@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import {
   Box,
@@ -47,9 +47,38 @@ const StyleTransfer: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [isGenerateEnabled, setIsGenerateEnabled] = useState<boolean>(false);
+  const [isModelLoading, setIsModelLoading] = useState<boolean>(true);
   const contentImageRef = useRef<HTMLImageElement>(null);
   const filterImageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const modelRef = useRef<tf.GraphModel | null>(null);
+
+  // Prefetch the model when component mounts
+  useEffect(() => {
+    const loadModel = async () => {
+      try {
+        setIsModelLoading(true);
+        setError('');
+        const model = await tf.loadGraphModel(`${process.env.PUBLIC_URL || ''}/tfjs_model/model.json`);
+        modelRef.current = model;
+        console.log('Model loaded successfully');
+      } catch (error) {
+        console.error('Error loading model:', error);
+        setError('Failed to load the style transfer model. Please refresh the page.');
+      } finally {
+        setIsModelLoading(false);
+      }
+    };
+
+    loadModel();
+
+    // Cleanup function to dispose of the model when component unmounts
+    return () => {
+      if (modelRef.current) {
+        modelRef.current.dispose();
+      }
+    };
+  }, []);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -85,14 +114,15 @@ const StyleTransfer: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!contentImage || !selectedFilter || !contentImageRef.current || !filterImageRef.current) return;
+    if (!modelRef.current) {
+      setError('Model is not loaded yet. Please wait.');
+      return;
+    }
 
     try {
       setIsProcessing(true);
       setError('');
       console.log('doStyleTransfer called');
-
-      const model = await tf.loadGraphModel(`${process.env.PUBLIC_URL || ''}/tfjs_model/model.json`);
-      console.log('Model loaded successfully');
 
       // Ensure images are loaded
       const contentImg = contentImageRef.current;
@@ -120,7 +150,7 @@ const StyleTransfer: React.FC = () => {
       });
 
       // Apply style transfer with reduced weight
-      const result = model.execute([imageTensor, filterImageTensor]) as tf.Tensor;
+      const result = modelRef.current.execute([imageTensor, filterImageTensor]) as tf.Tensor;
       
       console.log('Model output shape:', result.shape);
       const squeezed = tf.squeeze(result);
@@ -178,6 +208,12 @@ const StyleTransfer: React.FC = () => {
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
+        </Alert>
+      )}
+
+      {isModelLoading && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Loading style transfer model... Please wait.
         </Alert>
       )}
 
