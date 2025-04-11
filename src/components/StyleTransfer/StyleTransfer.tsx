@@ -17,15 +17,15 @@ import { PhotoCamera, Delete } from '@mui/icons-material';
 import './StyleTransfer.css';
 
 // Import filter images
-import filter1 from '../filters/filter_01.jpg';
-import filter2 from '../filters/filter_02.jpg';
-import filter3 from '../filters/filter_03.jpg';
-import filter4 from '../filters/filter_04.jpg';
-import filter5 from '../filters/filter_05.jpg';
-import filter6 from '../filters/filter_06.jpg';
-import filter7 from '../filters/filter_07.jpg';
-import filter8 from '../filters/filter_08.jpg';
-import filter9 from '../filters/filter_09.jpg';
+import filter1 from '../../filters/filter_01.jpg';
+import filter2 from '../../filters/filter_02.jpg';
+import filter3 from '../../filters/filter_03.jpg';
+import filter4 from '../../filters/filter_04.jpg';
+import filter5 from '../../filters/filter_05.jpg';
+import filter6 from '../../filters/filter_06.jpg';
+import filter7 from '../../filters/filter_07.jpg';
+import filter8 from '../../filters/filter_08.jpg';
+import filter9 from '../../filters/filter_09.jpg';
 
 // Define available filters
 const filters = [
@@ -198,7 +198,7 @@ const StyleTransfer: React.FC = () => {
 
   return (
     <Box className="container">
-      <Typography variant="h3" className="title" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+      <Typography variant="h4" className="title" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
         ArtStyle Transfer
       </Typography>
       <Typography variant="subtitle1" className="title" sx={{ color: '#666', mb: 4 }}>
