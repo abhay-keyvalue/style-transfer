@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import {
   Box,
@@ -14,31 +14,9 @@ import {
   InputLabel,
 } from '@mui/material';
 import { PhotoCamera, Delete } from '@mui/icons-material';
+import { useStyleTransfer } from '../../hooks/useStyleTransfer';
+import { filters } from '../../config/filters';
 import './StyleTransfer.css';
-
-// Import filter images
-import filter1 from '../../filters/filter_01.jpg';
-import filter2 from '../../filters/filter_02.jpg';
-import filter3 from '../../filters/filter_03.jpg';
-import filter4 from '../../filters/filter_04.jpg';
-import filter5 from '../../filters/filter_05.jpg';
-import filter6 from '../../filters/filter_06.jpg';
-import filter7 from '../../filters/filter_07.jpg';
-import filter8 from '../../filters/filter_08.jpg';
-import filter9 from '../../filters/filter_09.jpg';
-
-// Define available filters
-const filters = [
-  { id: 'filter1', name: 'Van Gogh - Starry Night', image: filter1 },
-  { id: 'filter2', name: 'Picasso - Cubism', image: filter2 },
-  { id: 'filter3', name: 'Monet - Water Lilies', image: filter3 },
-  { id: 'filter4', name: 'Kandinsky - Abstract', image: filter4 },
-  { id: 'filter5', name: 'Hokusai - The Great Wave', image: filter5 },
-  { id: 'filter6', name: 'Dali - Surrealism', image: filter6 },
-  { id: 'filter7', name: 'Mondrian - Composition', image: filter7 },
-  { id: 'filter8', name: 'Klimt - The Kiss', image: filter8 },
-  { id: 'filter9', name: 'Matisse - Cut-Outs', image: filter9 },
-];
 
 const StyleTransfer: React.FC = () => {
   const [contentImage, setContentImage] = useState<string>('');
@@ -47,57 +25,31 @@ const StyleTransfer: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [isGenerateEnabled, setIsGenerateEnabled] = useState<boolean>(false);
-  const [isModelLoading, setIsModelLoading] = useState<boolean>(true);
+  
   const contentImageRef = useRef<HTMLImageElement>(null);
   const filterImageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const modelRef = useRef<tf.GraphModel | null>(null);
-
-  // Prefetch the model when component mounts
-  useEffect(() => {
-    const loadModel = async () => {
-      try {
-        setIsModelLoading(true);
-        setError('');
-        const model = await tf.loadGraphModel(`${process.env.PUBLIC_URL || ''}/tfjs_model/model.json`);
-        modelRef.current = model;
-        console.log('Model loaded successfully');
-      } catch (error) {
-        console.error('Error loading model:', error);
-        setError('Failed to load the style transfer model. Please refresh the page.');
-      } finally {
-        setIsModelLoading(false);
-      }
-    };
-
-    loadModel();
-
-    // Cleanup function to dispose of the model when component unmounts
-    return () => {
-      if (modelRef.current) {
-        modelRef.current.dispose();
-      }
-    };
-  }, []);
+  
+  const { isModelLoading, error: modelError, processImage } = useStyleTransfer();
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          setContentImage(e.target?.result as string);
-          setError('');
-          setIsGenerateEnabled(!!selectedFilter);
-        };
-        img.onerror = () => {
-          setError('Failed to load image');
-        };
-        img.src = e.target?.result as string;
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        setContentImage(e.target?.result as string);
+        setError('');
+        setIsGenerateEnabled(!!selectedFilter);
       };
-      reader.readAsDataURL(file);
-    }
+      img.onerror = () => {
+        setError('Failed to load image');
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleFilterSelect = (filterId: string) => {
@@ -113,57 +65,21 @@ const StyleTransfer: React.FC = () => {
   };
 
   const handleGenerate = async () => {
-    if (!contentImage || !selectedFilter || !contentImageRef.current || !filterImageRef.current) return;
-    if (!modelRef.current) {
-      setError('Model is not loaded yet. Please wait.');
+    if (!contentImage || !selectedFilter || !contentImageRef.current || !filterImageRef.current) {
+      setError('Please select both content image and style filter');
       return;
     }
 
     try {
       setIsProcessing(true);
       setError('');
-      console.log('doStyleTransfer called');
 
-      // Ensure images are loaded
-      const contentImg = contentImageRef.current;
-      const filterImg = filterImageRef.current;
-
-      if (!contentImg.complete || !filterImg.complete) {
-        await Promise.all([
-          new Promise((resolve) => {
-            if (contentImg.complete) resolve(null);
-            else contentImg.onload = resolve;
-          }),
-          new Promise((resolve) => {
-            if (filterImg.complete) resolve(null);
-            else filterImg.onload = resolve;
-          })
-        ]);
-      }
-
-      const imageTensor = preprocess(contentImg, 1);
-      const filterImageTensor = preprocess(filterImg, 0.9);
-
-      console.log('Input tensor shapes:', {
-        image: imageTensor.shape,
-        style: filterImageTensor.shape
-      });
-
-      // Apply style transfer with reduced weight
-      const result = modelRef.current.execute([imageTensor, filterImageTensor]) as tf.Tensor;
-      
-      console.log('Model output shape:', result.shape);
-      const squeezed = tf.squeeze(result);
-      console.log('Squeezed shape:', squeezed.shape);
-      
-      if (!squeezed.shape || squeezed.shape.length !== 3) {
-        throw new Error(`Unexpected tensor shape after squeezing: ${JSON.stringify(squeezed.shape)}`);
-      }
+      const result = await processImage(contentImageRef.current, filterImageRef.current);
       
       const canvas = canvasRef.current;
       if (!canvas) throw new Error('Canvas not found');
       
-      await tf.browser.toPixels(squeezed as tf.Tensor3D, canvas);
+      await tf.browser.toPixels(result as tf.Tensor3D, canvas);
       setResultImage(canvas.toDataURL());
     } catch (error) {
       console.error('Error in style transfer:', error);
@@ -171,18 +87,6 @@ const StyleTransfer: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const preprocess = (imageData: HTMLImageElement, intensity: number = 1) => {
-
-    const imageTensor = tf.browser.fromPixels(imageData);
-
-    const normalized = imageTensor.div(tf.scalar(255.0));
-    
-    const scaled = normalized.mul(tf.scalar(intensity));
-    
-    const batched = scaled.expandDims(0);
-    return batched;
   };
 
   const handleDownload = () => {
@@ -204,18 +108,6 @@ const StyleTransfer: React.FC = () => {
       <Typography variant="subtitle1" className="title" sx={{ color: '#666', mb: 4 }}>
         Transform your photos with the styles of famous artists
       </Typography>
-      
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {isModelLoading && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Loading style transfer model... Please wait.
-        </Alert>
-      )}
 
       <Box className="upload-section">
         {/* Content Image */}
@@ -350,6 +242,17 @@ const StyleTransfer: React.FC = () => {
           </Paper>
         </Box>
       </Box>
+      {(error || modelError) && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error || modelError}
+        </Alert>
+      )}
+
+      {isModelLoading && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Loading style transfer model... Please wait.
+        </Alert>
+      )}
       {/* Hidden canvas for processing */}
       <canvas
         ref={canvasRef}

@@ -1,64 +1,128 @@
 import React, { useState } from 'react';
-import { AppBar, Tabs, Tab, Box } from '@mui/material';
+import { 
+  Drawer, 
+  List, 
+  ListItemButton, 
+  ListItemText, 
+  Typography, 
+  Box, 
+  IconButton,
+  useTheme,
+  useMediaQuery,
+  AppBar,
+  Toolbar
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import './App.css';
 import StyleTransfer from './components/StyleTransfer/StyleTransfer';
 import ObjectDetection from './components/ObjectDetection/ObjectDetection';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
+const App: React.FC = () => {
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-}
-
-function App() {
-  const [tabValue, setTabValue] = useState(0);
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  const handleTabChange = (index: number) => {
+    setSelectedTab(index);
+    if (isMobile) {
+      setMobileOpen(false);
+    }
   };
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const drawer = (
+    <>
+      <Box sx={{ p: 2 }}>
+        <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+          Tensorflow Samples
+        </Typography>
+      </Box>
+      <List>
+        <ListItemButton 
+          selected={selectedTab === 0}
+          onClick={() => handleTabChange(0)}
+        >
+          <ListItemText primary="Style Transfer" />
+        </ListItemButton>
+        <ListItemButton 
+          selected={selectedTab === 1}
+          onClick={() => handleTabChange(1)}
+        >
+          <ListItemText primary="Object Detection" />
+        </ListItemButton>
+      </List>
+    </>
+  );
 
   return (
     <div className="App">
-      <AppBar position="static">
-        <Tabs 
-          value={tabValue} 
-          onChange={handleTabChange} 
-          aria-label="basic tabs example"
-          centered
+      <Box sx={{ display: 'flex' }}>
+        <AppBar
+          position="fixed"
+          sx={{
+            width: { sm: `calc(100% - 240px)` },
+            ml: { sm: `240px` },
+            display: { xs: 'block', sm: 'none' }
+          }}
         >
-          <Tab label="Style Transfer" />
-          <Tab label="Object Detection" />
-        </Tabs>
-      </AppBar>
-      
-      <TabPanel value={tabValue} index={0}>
-        <StyleTransfer />
-      </TabPanel>
-      <TabPanel value={tabValue} index={1}>
-        <ObjectDetection />
-      </TabPanel>
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" noWrap component="div">
+              Tensorflow Samples
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        
+        <Box
+          component="nav"
+          sx={{ width: { sm: 240 }, flexShrink: { sm: 0 } }}
+        >
+          <Drawer
+            variant={isMobile ? "temporary" : "permanent"}
+            open={isMobile ? mobileOpen : true}
+            onClose={handleDrawerToggle}
+            ModalProps={{
+              keepMounted: true, // Better open performance on mobile.
+            }}
+            sx={{
+              '& .MuiDrawer-paper': {
+                boxSizing: 'border-box',
+                width: 240,
+                backgroundColor: '#f5f5f5',
+              },
+            }}
+          >
+            {drawer}
+          </Drawer>
+        </Box>
+        
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            width: { sm: `calc(100% - 240px)` },
+            mt: { xs: 7, sm: 0 }
+          }}
+        >
+          {selectedTab === 0 && <StyleTransfer />}
+          {selectedTab === 1 && <ObjectDetection />}
+        </Box>
+      </Box>
     </div>
   );
-}
+};
 
 export default App;
