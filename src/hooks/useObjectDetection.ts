@@ -8,9 +8,17 @@ interface DetectionResult {
   bbox: [number, number, number, number];
 }
 
+interface CameraDevice {
+  deviceId: string;
+  label: string;
+  facing?: 'user' | 'environment' | 'left' | 'right';
+}
+
 export const useObjectDetection = () => {
   const [model, setModel] = useState<cocoSsd.ObjectDetection | null>(null);
   const [isWebcamEnabled, setIsWebcamEnabled] = useState(false);
+  const [cameras, setCameras] = useState<CameraDevice[]>([]);
+  const [selectedCamera, setSelectedCamera] = useState<string>('');
   const childrenRef = useRef<HTMLElement[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const liveViewRef = useRef<HTMLDivElement>(null);
@@ -32,6 +40,27 @@ export const useObjectDetection = () => {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   };
 
+  const getCameras = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices
+        .filter(device => device.kind === 'videoinput')
+        .map(device => ({
+          deviceId: device.deviceId,
+          label: device.label || `Camera ${device.deviceId}`,
+          facing: undefined // We'll determine this when the camera is actually used
+        }));
+      setCameras(videoDevices);
+      
+      // Try to get the back camera by default
+      if (videoDevices.length > 0) {
+        setSelectedCamera(videoDevices[0].deviceId);
+      }
+    } catch (error) {
+      console.error('Error enumerating cameras:', error);
+    }
+  };
+
   const enableWebcam = async () => {
     if (!model) {
       console.warn('Model not loaded yet');
@@ -41,7 +70,14 @@ export const useObjectDetection = () => {
     setIsWebcamEnabled(true);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const constraints = {
+        video: {
+          deviceId: selectedCamera ? { exact: selectedCamera } : undefined,
+          facingMode: !selectedCamera ? 'environment' : undefined
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.addEventListener('loadeddata', predictWebcam);
@@ -119,5 +155,9 @@ export const useObjectDetection = () => {
     enableWebcam,
     videoRef,
     liveViewRef,
+    cameras,
+    selectedCamera,
+    setSelectedCamera,
+    getCameras
   };
 }; 

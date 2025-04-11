@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Button,
@@ -6,6 +6,10 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { useObjectDetection } from '../../hooks/useObjectDetection';
 import './ObjectDetection.css';
@@ -20,7 +24,17 @@ const ObjectDetection: React.FC = () => {
     enableWebcam,
     videoRef,
     liveViewRef,
+    cameras,
+    selectedCamera,
+    setSelectedCamera,
+    getCameras
   } = useObjectDetection();
+
+  useEffect(() => {
+    if (isWebcamSupported()) {
+      getCameras();
+    }
+  }, [isWebcamSupported, getCameras]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -51,8 +65,27 @@ const ObjectDetection: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          gap: 2
         }}
       >
+        {cameras.length > 0 && !isWebcamEnabled && (
+          <FormControl fullWidth sx={{ maxWidth: 400 }}>
+            <InputLabel id="camera-select-label">Select Camera</InputLabel>
+            <Select
+              labelId="camera-select-label"
+              value={selectedCamera}
+              label="Select Camera"
+              onChange={(e) => setSelectedCamera(e.target.value)}
+            >
+              {cameras.map((camera) => (
+                <MenuItem key={camera.deviceId} value={camera.deviceId}>
+                  {camera.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+
         <Box
           id="liveView"
           className="video-container"
@@ -100,7 +133,7 @@ const ObjectDetection: React.FC = () => {
                 }
               }}
             >
-              Enable Webcam
+              Enable Camera
             </Button>
           )}
         </Box>

@@ -1,20 +1,28 @@
-# Style Transfer Web Application
+# TensorFlow.js Samples
 
-A React-based web application that allows users to apply artistic style transfer to their images using TensorFlow.js. This project demonstrates the power of neural style transfer in the browser.
+A React-based web application showcasing TensorFlow.js capabilities with two main features: Art Style Transfer and Real-time Object Detection. Built with modern web technologies, this project demonstrates the power of machine learning in the browser.
 
 ## Features
 
+### Art Style Transfer
 - Upload and process images directly in the browser
 - Apply various artistic styles to your images
 - Real-time style transfer using TensorFlow.js
+- Download transformed images
 - Modern UI built with Material-UI
+
+### Object Detection
+- Real-time object detection using webcam
+- Built with COCO-SSD model
 - Responsive design for all device sizes
+- Clean and intuitive interface
 
 ## Tech Stack
 
 - React 19
 - TypeScript
 - TensorFlow.js
+- COCO-SSD model
 - Material-UI
 - Emotion (for styled components)
 
@@ -66,8 +74,13 @@ Deploys the application to GitHub Pages.
 
 ## Project Structure
 
-- `src/components/` - Contains the main StyleTransfer component
-- `src/filters/` - Contains style transfer model implementations
+- `src/components/`
+  - `StyleTransfer/` - Art style transfer implementation
+  - `ObjectDetection/` - Real-time object detection implementation
+  - `TabPanel/` - Reusable tab panel component
+- `src/hooks/` - Custom React hooks for TensorFlow.js operations
+- `src/config/` - Configuration files and constants
+- `src/filters/` - Style transfer model implementations
 - `public/` - Static assets and HTML template
 
 ## Contributing
@@ -80,6 +93,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- TensorFlow.js team for the style transfer model
+- TensorFlow.js team for the style transfer and object detection models
 - Create React App for the project setup
 - Material-UI for the UI components
