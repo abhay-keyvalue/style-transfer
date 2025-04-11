@@ -2,7 +2,7 @@
 
 This document provides a comprehensive guide to integrating TensorFlow.js in a React project for implementing Arbitrary Style Transfer functionality.
 
-![TensorFlow Logo](https://abhay-keyvalue.github.io/style-transfer/public/sample.jpg)
+![TensorFlow Logo](https://github.com/abhay-keyvalue/style-transfer/blob/main/public/sample.jpg?raw=true)
 
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
