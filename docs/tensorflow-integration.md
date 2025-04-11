@@ -216,6 +216,6 @@ try {
 
 ## Additional Resources
 
-- [TensorFlow.js Documentation](https://www.tensorflow.org/js)
+- [TensorFlow.js Documentation](https://www.tensorflow.org/hub)
 - [Example](https://github.com/abhay-keyvalue/style-transfer)
 - [Demo](https://abhay-keyvalue.github.io/style-transfer/)
