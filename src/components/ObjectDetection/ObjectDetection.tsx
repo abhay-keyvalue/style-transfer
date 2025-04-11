@@ -133,7 +133,7 @@ const ObjectDetection: React.FC = () => {
                 }
               }}
             >
-              Enable Camera
+              Open Camera
             </Button>
           )}
         </Box>
