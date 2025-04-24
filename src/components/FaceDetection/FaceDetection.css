@@ -1,48 +1,18 @@
 .face-detection-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.face-detection-title {
-  color: #1976d2; /* Material-UI primary color */
-  font-weight: 500;
-  margin-bottom: 16px;
-}
-
-.camera-container {
   position: relative;
   width: 640px;
   height: 480px;
 }
 
-.webcam {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.face-detection-webcam {
+  position: absolute;
+  width: 640px;
+  height: 480px;
 }
 
-.canvas-overlay {
+.face-detection-canvas {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  width: 640px;
+  height: 480px;
   z-index: 1;
 }
-
-.camera-select {
-  width: 100%;
-  max-width: 640px;
-}
-
-.controls-container {
-  display: flex;
-  gap: 8px;
-}
-
-.error-alert {
-  width: 100%;
-  max-width: 640px;
-} 
