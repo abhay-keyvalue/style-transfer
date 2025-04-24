@@ -17,6 +17,7 @@ import './App.css';
 import StyleTransfer from './components/StyleTransfer/StyleTransfer';
 import ObjectDetection from './components/ObjectDetection/ObjectDetection';
 import FaceDetection from './components/FaceDetection/FaceDetection';
+import CatDogDetector from './components/CatDogDetector/CatDogDetector';
 
 const App: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -60,6 +61,12 @@ const App: React.FC = () => {
           onClick={() => handleTabChange(2)}
         >
           <ListItemText primary="Face Detection" />
+        </ListItemButton>
+        <ListItemButton 
+          selected={selectedTab === 3}
+          onClick={() => handleTabChange(3)}
+        >
+          <ListItemText primary="Cat/Dog Detector" />
         </ListItemButton>
       </List>
     </>
@@ -127,6 +134,7 @@ const App: React.FC = () => {
           {selectedTab === 0 && <StyleTransfer />}
           {selectedTab === 1 && <ObjectDetection />}
           {selectedTab === 2 && <FaceDetection />}
+          {selectedTab === 3 && <CatDogDetector />}
         </Box>
       </Box>
     </div>

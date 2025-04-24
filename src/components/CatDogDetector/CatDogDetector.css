@@ -1,0 +1,34 @@
+.cat-dog-detector {
+  padding: 24px;
+  max-width: 600px;
+  margin: 32px auto 0;
+}
+
+.cat-dog-detector h2 {
+  margin-bottom: 16px;
+}
+
+.cat-dog-detector .button-container {
+  margin-bottom: 16px;
+}
+
+.cat-dog-detector .upload-button {
+  margin-right: 16px;
+}
+
+.cat-dog-detector .image-container {
+  margin-bottom: 16px;
+}
+
+.cat-dog-detector .uploaded-image {
+  max-width: 100%;
+  height: auto;
+}
+
+.cat-dog-detector .prediction-text {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.cat-dog-detector .file-input {
+  display: none;
+} 
