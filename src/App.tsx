@@ -16,6 +16,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import './App.css';
 import StyleTransfer from './components/StyleTransfer/StyleTransfer';
 import ObjectDetection from './components/ObjectDetection/ObjectDetection';
+import FaceDetection from './components/FaceDetection/FaceDetection';
 
 const App: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -53,6 +54,12 @@ const App: React.FC = () => {
           onClick={() => handleTabChange(1)}
         >
           <ListItemText primary="Object Detection" />
+        </ListItemButton>
+        <ListItemButton 
+          selected={selectedTab === 2}
+          onClick={() => handleTabChange(2)}
+        >
+          <ListItemText primary="Face Detection" />
         </ListItemButton>
       </List>
     </>
@@ -119,6 +126,7 @@ const App: React.FC = () => {
         >
           {selectedTab === 0 && <StyleTransfer />}
           {selectedTab === 1 && <ObjectDetection />}
+          {selectedTab === 2 && <FaceDetection />}
         </Box>
       </Box>
     </div>
