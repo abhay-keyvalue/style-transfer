@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import Webcam from 'react-webcam';
 import { SelectChangeEvent } from '@mui/material';
@@ -36,6 +36,7 @@ export const useFaceDetection = (): FaceDetectionHook => {
   const webcamRef = useRef<Webcam | null>(null);
   const modelRef = useRef<tf.GraphModel | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isDetectingRef = useRef<boolean>(false);
   const [model, setModel] = useState<any>(null);
   const [isDetecting, setIsDetecting] = useState(false);
   const [devices, setDevices] = useState<Device[]>([]);
@@ -43,6 +44,7 @@ export const useFaceDetection = (): FaceDetectionHook => {
   const [error, setError] = useState<string>('');
   const [hasPermission, setHasPermission] = useState<boolean>(false);
 
+  console.log('isDetecting', isDetecting);
 
   useEffect(() => {
     const loadModel = async () => {
@@ -140,7 +142,7 @@ export const useFaceDetection = (): FaceDetectionHook => {
     ctx.fillText('Face', x, y - 5);
   };
 
-  const detectFaces = async () => {
+  const detect = useCallback(async () => {
     if (!model || !webcamRef.current?.video || !canvasRef.current) {
       console.error('Required components not available for face detection');
       return;
@@ -158,66 +160,80 @@ export const useFaceDetection = (): FaceDetectionHook => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    const detect = async () => {
-      console.log('Detecting faces', isDetecting);
-      try {
-        // Prepare input tensor
-        const input = tf.browser.fromPixels(video)
-          .resizeNearestNeighbor([192, 192])
-          .expandDims(0)
-          .toFloat()
-          .div(255.0);
+    console.log('Detecting faces', isDetectingRef.current);
+    
+    if(!isDetectingRef.current) return;
+    
+    try {
+      // Prepare input tensor
+      const input = tf.browser.fromPixels(video)
+        .resizeNearestNeighbor([192, 192])
+        .expandDims(0)
+        .toFloat()
+        .div(255.0);
 
-
-        // Run inference
-        const predictions = await model.execute(input);
-        const [boxes, scores, landmarks] = predictions;
-        
-        // Get the data from tensors
-        const boxesData = await boxes.array();
-        const scoresData = await scores.array();
-        const landmarksData = await landmarks.array();
-        
-        // Clear previous drawings
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Process each detection
-        for (let i = 0; i < scoresData[0].length; i++) {
-          if (scoresData[0][i] > 0.5) {  // Only process detections with confidence > 0.5
-            const box = boxesData[0][i];
-            
-            // Convert normalized coordinates to pixel coordinates
-            const x = box[0] * canvas.width;
-            const y = box[1] * canvas.height;
-            const width = (box[2] - box[0]) * canvas.width;
-            const height = (box[3] - box[1]) * canvas.height;
-            
-            // Draw bounding box
-            ctx.strokeStyle = '#00FF00';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, width, height);
-            
-            // Draw confidence score
-            ctx.fillStyle = '#00FF00';
-            ctx.font = '16px Arial';
-            ctx.fillText(`Face ${(scoresData[0][i] * 100).toFixed(1)}%`, x, y - 5);
+      // Run inference
+      const predictions = await model.execute(input);
+      const [boxes, scores, landmarks] = predictions;
+      
+      console.log('predictions', predictions);
+      
+      // Get the data from tensors
+      const boxesData = await boxes.array();
+      const scoresData = await scores.array();
+      const landmarksData = await landmarks.array();
+      
+      // Clear previous drawings
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Process each detection
+      for (let i = 0; i < scoresData[0].length; i++) {
+        if (scoresData[0][i] > 0.5) {  // Only process detections with confidence > 0.5
+          const box = boxesData[0][i];
+          const landmark = landmarksData[0][i];
+          
+          console.log('landmark data:', landmark);
+          
+          // Convert landmarks to FaceLandmark format
+          let faceLandmarks: FaceLandmark[] = [];
+          
+          if (Array.isArray(landmark)) {
+            faceLandmarks = landmark.map((point: number[]) => ({
+              x: point[0],
+              y: point[1],
+              z: point[2],
+              score: scoresData[0][i]
+            }));
+          } else if (typeof landmark === 'object' && landmark !== null) {
+            // If landmark is an object with x, y, z properties
+            faceLandmarks = [{
+              x: landmark[0],
+              y: landmark[1],
+              z: landmark[2],
+              score: scoresData[0][i]
+            }];
           }
+          
+          console.log('converted faceLandmarks:', faceLandmarks);
+          
+          // Use drawBoundingBox function
+          drawBoundingBox(ctx, faceLandmarks, canvas.width, canvas.height);
         }
-
-        // Clean up tensors
-        tf.dispose(predictions);
-
-        // Continue detection loop
-        requestAnimationFrame(detect);
-      } catch (error) {
-        console.error('Error during face detection:', error);
-        setIsDetecting(false);
       }
-    };
 
-    // Start detection loop
-    detect();
-  };
+      // Clean up tensors
+      tf.dispose(predictions);
+
+      // Continue detection loop
+      if (isDetectingRef.current) {
+        requestAnimationFrame(detect);
+      }
+    } catch (error) {
+      console.error('Error during face detection:', error);
+      setIsDetecting(false);
+      isDetectingRef.current = false;
+    }
+  }, [model]);
 
   const startDetection = () => {
     if (!model) {
@@ -234,11 +250,13 @@ export const useFaceDetection = (): FaceDetectionHook => {
 
     console.log('Starting face detection');
     setIsDetecting(true);
-    detectFaces();
+    isDetectingRef.current = true;
+    detect();
   };
 
   const stopDetection = () => {
     setIsDetecting(false);
+    isDetectingRef.current = false;
   };
 
   return {
