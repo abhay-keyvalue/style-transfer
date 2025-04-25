@@ -1,18 +1,74 @@
 .face-detection-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+.face-detection-container h1 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 2rem;
+  font-size: 2.5rem;
+  font-weight: 600;
+}
+
+.camera-section {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.camera-container {
   position: relative;
   width: 640px;
   height: 480px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: #000;
 }
 
 .face-detection-webcam {
+  left: 0;
+  top: 0;
   position: absolute;
   width: 640px;
   height: 480px;
+  object-fit: cover;
 }
 
 .face-detection-canvas {
+  left: 0;
+  top: 0;
   position: absolute;
   width: 640px;
   height: 480px;
   z-index: 1;
+}
+
+.upload-section {
+  flex: 1;
+  min-width: 300px;
+}
+
+@media (max-width: 1024px) {
+  .camera-section {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .camera-container {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .face-detection-webcam,
+  .face-detection-canvas {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4/3;
+  }
 }
